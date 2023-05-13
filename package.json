@@ -1,0 +1,28 @@
+{
+  "name": "stormlib-node",
+  "version": "0.1.0",
+  "description": "Node native module of StormLib C++ library built for Electron",
+  "main": "build/Release/stormlib.node",
+  "typings": "src/index.d.ts",
+  "author": "Haaxor1689",
+  "license": "MIT",
+  "scripts": {
+    "compile": "msbuild .\\stormlib\\StormLib_vs22.sln /t:StormLib;StormLib_dll /p:Configuration=ReleaseAS;BuildProjectReferences=false;Platform=x64",
+    "configure": "node-gyp configure --target=16.0.0 --arch=x64 --dist-url=https://electronjs.org/headers",
+    "build": "node-gyp build"
+  },
+  "devDependencies": {
+    "node-addon-api": "^6.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Haaxor1689/stormlib-node.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Haaxor1689/stormlib-node/issues"
+  },
+  "homepage": "https://github.com/Haaxor1689/stormlib-node",
+  "publishConfig": {
+    "access": "public"
+  }
+}

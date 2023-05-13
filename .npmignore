@@ -1,0 +1,7 @@
+build
+node_modules
+stormlib
+
+.gitmodules
+
+!build/Release/stormlib.node
