@@ -2,16 +2,15 @@
   "name": "stormlib-node",
   "version": "0.2.0",
   "description": "Node native module of StormLib C++ library built for Electron",
-  "main": "stormlib.node",
+  "main": "dist/stormlib.node",
   "typings": "src/index.d.ts",
   "author": "Haaxor1689",
   "license": "MIT",
   "scripts": {
-    "compile": "msbuild .\\stormlib\\StormLib_vs22.sln /t:StormLib;StormLib_dll /p:Configuration=ReleaseAS;BuildProjectReferences=false;Platform=x64 & npm run prepare",
+    "compile": "git submodule init & git submodule update & msbuild .\\stormlib\\StormLib_vs22.sln /t:StormLib;StormLib_dll /p:Configuration=ReleaseAS;BuildProjectReferences=false;Platform=x64 & node scripts/post-compile.js",
     "configure": "node-gyp configure",
-    "configure:electron": "node-gyp configure --target=16.0.0 --arch=x64 --dist-url=https://electronjs.org/headers",
-    "build": "node-gyp build",
-    "prepare": "node src/prepare.js"
+    "build": "node-gyp build & node scripts/post-build.js",
+    "prepare": "npm run compile & npm run configure & npm run build"
   },
   "dependencies": {
     "fs-extra": "^11.1.1",
