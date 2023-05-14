@@ -27,7 +27,6 @@ Then, after downloading this repository run:
 
 ```
 npm install
-git submodule init
 npm run compile
 npm run configure
 ```
