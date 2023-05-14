@@ -1,6 +1,12 @@
 declare module 'stormlib-node' {
-  type Handle = BigInt;
+  export type Handle = BigInt;
 
-  function openArchive(fileName: string, mode: number): Handle;
-  function closeArchive(handle: Handle): void;
+  export function openArchive(fileName: string, mode: number): Handle;
+  export function closeArchive(handle: Handle): void;
+
+  export default {
+    Handle,
+    openArchive,
+    closeArchive
+  };
 }
