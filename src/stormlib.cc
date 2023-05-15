@@ -1,53 +1,244 @@
 #include <napi.h>
 #include <StormLib.h>
+#include "iostream"
 
-Napi::Value OpenArchive(const Napi::CallbackInfo &info)
+auto ReadHandle(const Napi::Value &value)
 {
-  Napi::Env env = info.Env();
-
-  // Get the archive filename and open mode from the arguments
-  std::string filename = info[0].As<Napi::String>().Utf8Value();
-  int mode = info[1].As<Napi::Number>().Int32Value();
-
-  // Open the archive
-  HANDLE hArchive;
-  if (!SFileOpenArchive(filename.c_str(), mode, 0, &hArchive))
-  {
-    Napi::Error::New(env, "Failed to open archive").ThrowAsJavaScriptException();
-    return env.Undefined();
-  }
-
-  // Wrap the archive handle in a Napi::BigInt object
-  return Napi::BigInt::New(env, (uint64_t)hArchive);
+  bool lossless;
+  return (HANDLE)value.As<Napi::BigInt>().Uint64Value(&lossless);
 }
 
-Napi::Value CloseArchive(const Napi::CallbackInfo &info)
+auto ThrowError(const Napi::Env &env, const std::string &message)
 {
-  Napi::Env env = info.Env();
+  auto err = GetLastError();
+  Napi::Error::New(env, "Failed to " + message + " (ERR:" + std::to_string(err) + ")").ThrowAsJavaScriptException();
+}
 
-  // Get the archive handle from the argument
-  bool success;
-  HANDLE hArchive = (HANDLE)info[0].As<Napi::BigInt>().Uint64Value(&success);
-  if (!success)
-  {
-    Napi::TypeError::New(env, "Invalid handle").ThrowAsJavaScriptException();
-    return env.Null();
-  }
+Napi::Value _SFileOpenArchive(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  // Get the archive filename and open mode from the arguments
+  auto szMpqName = info[0].As<Napi::String>().Utf8Value();
+  auto dwFlags = info[1].As<Napi::Number>().Int32Value();
+
+  // Open the archive
+  HANDLE hMpq;
+  if (!SFileOpenArchive(szMpqName.c_str(), dwFlags, 0, &hMpq))
+    ThrowError(env, "open archive");
+
+  // Wrap the archive handle in a Napi::BigInt object
+  return Napi::BigInt::New(env, (uint64_t)hMpq);
+}
+
+Napi::Value _SFileCreateArchive(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto szMpqName = info[0].As<Napi::String>().Utf8Value();
+  auto dwCreateFlags = info[1].As<Napi::Number>().Int32Value();
+  auto dwMaxFileCount = info[2].As<Napi::Number>().Int32Value();
+
+  HANDLE hMpq;
+  if (!SFileCreateArchive(szMpqName.c_str(), dwCreateFlags, dwMaxFileCount, &hMpq))
+    ThrowError(env, "create archive");
+
+  return Napi::BigInt::New(env, (uint64_t)hMpq);
+}
+
+void _SFileFlushArchive(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+
+  if (!SFileFlushArchive(hMpq))
+    ThrowError(env, "flush archive");
+}
+
+void _SFileCloseArchive(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
 
   // Close the archive
-  if (!SFileCloseArchive(hArchive))
+  if (!SFileCloseArchive(hMpq))
+    ThrowError(env, "close archive");
+}
+
+Napi::Value _SFileOpenFileEx(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+  auto szFileName = info[1].As<Napi::String>().Utf8Value();
+  auto dwSearchScope = info[2].As<Napi::Number>().Int32Value();
+
+  HANDLE hFile;
+  if (!SFileOpenFileEx(hMpq, szFileName.c_str(), dwSearchScope, &hFile))
+    ThrowError(env, "open file");
+
+  return Napi::BigInt::New(env, (uint64_t)hFile);
+}
+
+void _SFileReadFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFile = ReadHandle(info[0]);
+  auto lpBuffer = info[1].As<Napi::ArrayBuffer>();
+
+  DWORD pdwRead;
+  if (!SFileReadFile(hFile, lpBuffer.Data(), lpBuffer.ByteLength(), &pdwRead, NULL))
+    ThrowError(env, "read file");
+}
+
+void _SFileCloseFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFile = ReadHandle(info[0]);
+  if (!SFileCloseFile(hFile))
+    ThrowError(env, "close file");
+}
+
+Napi::Value _SFileFindFirstFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+  auto szMask = info[1].As<Napi::String>().Utf8Value();
+
+  SFILE_FIND_DATA lpFindFileData;
+  auto hFind = SFileFindFirstFile(hMpq, szMask.c_str(), &lpFindFileData, nullptr);
+
+  if (hFind == nullptr)
+    ThrowError(env, "find firt file");
+
+  Napi::Object obj = Napi::Object::New(env);
+  obj.Set(Napi::String::New(env, "hFind"), Napi::BigInt::New(env, (uint64_t)hFind));
+  obj.Set(Napi::String::New(env, "cFileName"), Napi::String::New(env, lpFindFileData.cFileName));
+  obj.Set(Napi::String::New(env, "szPlainName"), Napi::String::New(env, lpFindFileData.szPlainName));
+  obj.Set(Napi::String::New(env, "dwHashIndex"), Napi::Number::New(env, lpFindFileData.dwHashIndex));
+  obj.Set(Napi::String::New(env, "dwBlockIndex"), Napi::Number::New(env, lpFindFileData.dwBlockIndex));
+  obj.Set(Napi::String::New(env, "dwFileSize"), Napi::Number::New(env, lpFindFileData.dwFileSize));
+  obj.Set(Napi::String::New(env, "dwCompSize"), Napi::Number::New(env, lpFindFileData.dwCompSize));
+  obj.Set(Napi::String::New(env, "dwFileTimeLo"), Napi::Number::New(env, lpFindFileData.dwFileTimeLo));
+  obj.Set(Napi::String::New(env, "dwFileTimeHi"), Napi::Number::New(env, lpFindFileData.dwFileTimeHi));
+  obj.Set(Napi::String::New(env, "lcLocale"), Napi::Number::New(env, lpFindFileData.lcLocale));
+
+  return obj;
+}
+
+Napi::Value _SFileFindNextFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFind = ReadHandle(info[0]);
+
+  // Find the next file
+  SFILE_FIND_DATA lpFindFileData;
+  if (!SFileFindNextFile(hFind, &lpFindFileData))
   {
-    Napi::Error::New(env, "Failed to close archive").ThrowAsJavaScriptException();
-    return env.Undefined();
+    if (GetLastError() == ERROR_NO_MORE_FILES)
+      return env.Null();
+    ThrowError(env, "find next file");
   }
 
-  return env.Undefined();
+  Napi::Object obj = Napi::Object::New(env);
+  obj.Set(Napi::String::New(env, "cFileName"), Napi::String::New(env, lpFindFileData.cFileName));
+  obj.Set(Napi::String::New(env, "szPlainName"), Napi::String::New(env, lpFindFileData.szPlainName));
+  obj.Set(Napi::String::New(env, "dwHashIndex"), Napi::Number::New(env, lpFindFileData.dwHashIndex));
+  obj.Set(Napi::String::New(env, "dwBlockIndex"), Napi::Number::New(env, lpFindFileData.dwBlockIndex));
+  obj.Set(Napi::String::New(env, "dwFileSize"), Napi::Number::New(env, lpFindFileData.dwFileSize));
+  obj.Set(Napi::String::New(env, "dwCompSize"), Napi::Number::New(env, lpFindFileData.dwCompSize));
+  obj.Set(Napi::String::New(env, "dwFileTimeLo"), Napi::Number::New(env, lpFindFileData.dwFileTimeLo));
+  obj.Set(Napi::String::New(env, "dwFileTimeHi"), Napi::Number::New(env, lpFindFileData.dwFileTimeHi));
+  obj.Set(Napi::String::New(env, "lcLocale"), Napi::Number::New(env, lpFindFileData.lcLocale));
+
+  return obj;
+}
+
+void _SFileFindClose(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFind = ReadHandle(info[0]);
+
+  if (!SFileFindClose(hFind))
+    ThrowError(env, "find close file search");
+}
+
+Napi::Value _SFileCreateFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+  auto szArchivedName = info[1].As<Napi::String>().Utf8Value();
+  auto dwFileSize = info[2].As<Napi::Number>().Int32Value();
+  auto lcLocale = info[3].As<Napi::Number>().Int32Value();
+  auto dwFlags = info[4].As<Napi::Number>().Int32Value();
+
+  HANDLE hFile;
+  if (!SFileCreateFile(hMpq, szArchivedName.c_str(), 0, dwFileSize, lcLocale, dwFlags, &hFile))
+    ThrowError(env, "create file");
+
+  return Napi::BigInt::New(env, (uint64_t)hFile);
+}
+
+void _SFileWriteFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFile = ReadHandle(info[0]);
+  auto pvData = info[1].As<Napi::ArrayBuffer>();
+  auto dwCompression = info[2].As<Napi::Number>().Int32Value();
+
+  if (!SFileWriteFile(hFile, pvData.Data(), pvData.ByteLength(), dwCompression))
+    ThrowError(env, "read file");
+}
+
+void _SFileFinishFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFile = ReadHandle(info[0]);
+  if (!SFileFinishFile(hFile))
+    ThrowError(env, "finish file");
 }
 
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
-  exports.Set(Napi::String::New(env, "openArchive"), Napi::Function::New(env, OpenArchive));
-  exports.Set(Napi::String::New(env, "closeArchive"), Napi::Function::New(env, CloseArchive));
+#define BIND(function) exports.Set(Napi::String::New(env, #function), Napi::Function::New(env, _##function))
+
+  // Manipulating MPQ archives
+  BIND(SFileOpenArchive);
+  BIND(SFileCreateArchive);
+  BIND(SFileFlushArchive);
+  BIND(SFileCloseArchive);
+
+  // Using patched archives
+  // TODO
+
+  // Reading files
+  BIND(SFileOpenFileEx);
+  BIND(SFileReadFile);
+  BIND(SFileCloseFile);
+
+  // File searching
+  BIND(SFileFindFirstFile);
+  BIND(SFileFindNextFile);
+  BIND(SFileFindClose);
+
+  // Adding files to MPQ
+  BIND(SFileCreateFile);
+  BIND(SFileWriteFile);
+  BIND(SFileFinishFile);
+
+  // Compression functions
+  // TODO
+
   return exports;
 }
 
