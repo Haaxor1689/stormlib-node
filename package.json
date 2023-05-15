@@ -1,7 +1,7 @@
 {
   "name": "stormlib-node",
   "version": "1.0.0",
-  "description": "Node native module of StormLib C++ library built for Electron",
+  "description": "Node native module of StormLib C++ library",
   "main": "dist/stormlib.node",
   "typings": "src/index.d.ts",
   "author": "Haaxor1689",
