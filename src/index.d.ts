@@ -37,6 +37,8 @@ declare module 'stormlib-node' {
     szFileName: string,
     dwSearchScope: number
   ): HANDLE;
+  /** [Full documentation](http://www.zezula.net/en/mpq/stormlib/sfilegetfilesize.html) */
+  export function SFileGetFileSize(hFile: HANDLE): bigint;
   /** [Full documentation](http://www.zezula.net/en/mpq/stormlib/sfilereadfile.html) */
   export function SFileReadFile(hFile: HANDLE, lpBuffer: ArrayBuffer): void;
   /** [Full documentation](http://www.zezula.net/en/mpq/stormlib/sfileclosefile.html) */

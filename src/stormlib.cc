@@ -82,6 +82,20 @@ Napi::Value _SFileOpenFileEx(const Napi::CallbackInfo &info)
   return Napi::BigInt::New(env, (uint64_t)hFile);
 }
 
+Napi::Value _SFileGetFileSize(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hFile = ReadHandle(info[0]);
+
+  DWORD pdwFileSizeHigh;
+  DWORD pdwFileSizeLow = SFileGetFileSize(hFile, &pdwFileSizeHigh);
+  if (pdwFileSizeLow == SFILE_INVALID_SIZE)
+    ThrowError(env, "get file size");
+
+  return Napi::BigInt::New(env, (uint64_t)((ULONGLONG)pdwFileSizeHigh << 32) | pdwFileSizeLow);
+}
+
 void _SFileReadFile(const Napi::CallbackInfo &info)
 {
   auto env = info.Env();
@@ -241,6 +255,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
 
   // Reading files
   BIND(SFileOpenFileEx);
+  BIND(SFileGetFileSize);
   BIND(SFileReadFile);
   BIND(SFileCloseFile);
   BIND(SFileHasFile);
