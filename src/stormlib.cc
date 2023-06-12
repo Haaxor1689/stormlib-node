@@ -103,6 +103,24 @@ void _SFileCloseFile(const Napi::CallbackInfo &info)
     ThrowError(env, "close file");
 }
 
+Napi::Value _SFileHasFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+  auto szFileName = info[1].As<Napi::String>().Utf8Value();
+
+  if (!SFileHasFile(hMpq, szFileName.c_str()))
+  {
+
+    if (GetLastError() == ERROR_FILE_NOT_FOUND)
+      return Napi::Boolean::New(env, false);
+    ThrowError(env, "has file");
+  }
+
+  return Napi::Boolean::New(env, true);
+}
+
 Napi::Value _SFileFindFirstFile(const Napi::CallbackInfo &info)
 {
   auto env = info.Env();
@@ -225,6 +243,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
   BIND(SFileOpenFileEx);
   BIND(SFileReadFile);
   BIND(SFileCloseFile);
+  BIND(SFileHasFile);
 
   // File searching
   BIND(SFileFindFirstFile);

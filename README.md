@@ -13,7 +13,15 @@ npm i stormlib-node
 Import in one of your main thread scripts:
 
 ```js
-import StormLib from 'stormlib-node';
+import { SFileOpenArchive } from 'stormlib-node';
+```
+
+You can also import and use enum values:
+
+```js
+import { STREAM_FLAG } from 'stormlib-node/dist/enums';
+
+SFileOpenArchive('path/to/archive.mpq', STREAM_FLAG.READ_ONLY);
 ```
 
 ## Development

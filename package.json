@@ -1,20 +1,22 @@
 {
   "name": "stormlib-node",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Node native module of StormLib C++ library",
   "main": "dist/stormlib.node",
   "typings": "src/index.d.ts",
   "author": "Haaxor1689",
   "license": "MIT",
   "scripts": {
+    "ts:build": "tsc",
     "compile": "git submodule init & git submodule update & msbuild .\\stormlib\\StormLib_vs22.sln /t:StormLib;StormLib_dll /p:Configuration=ReleaseAS;BuildProjectReferences=false;Platform=x64 & node scripts/post-compile.js",
     "configure": "node scripts/pre-configure.js & node-gyp configure",
     "build": "node-gyp build & node scripts/post-build.js",
-    "prepare": "npm run compile & npm run configure & npm run build"
+    "prepare": "npm run compile & npm run configure & npm run build & npm run ts:build"
   },
   "dependencies": {
     "fs-extra": "^11.1.1",
-    "node-addon-api": "^6.1.0"
+    "node-addon-api": "^6.1.0",
+    "typescript": "^5.1.3"
   },
   "repository": {
     "type": "git",
