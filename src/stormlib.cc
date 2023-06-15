@@ -67,6 +67,21 @@ void _SFileCloseArchive(const Napi::CallbackInfo &info)
     ThrowError(env, "close archive");
 }
 
+void _SFileCompactArchive(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+
+  std::string szListFile;
+  if (info.Length() > 1 && info[1].IsString())
+    auto szListFile = info[1].As<Napi::String>().Utf8Value();
+
+  // Close the archive
+  if (!SFileCompactArchive(hMpq, szListFile.empty() ? nullptr : szListFile.c_str(), 0))
+    ThrowError(env, "compact archive");
+}
+
 Napi::Value _SFileOpenFileEx(const Napi::CallbackInfo &info)
 {
   auto env = info.Env();
@@ -104,7 +119,7 @@ void _SFileReadFile(const Napi::CallbackInfo &info)
   auto lpBuffer = info[1].As<Napi::ArrayBuffer>();
 
   DWORD pdwRead;
-  if (!SFileReadFile(hFile, lpBuffer.Data(), lpBuffer.ByteLength(), &pdwRead, NULL))
+  if (!SFileReadFile(hFile, lpBuffer.Data(), lpBuffer.ByteLength(), &pdwRead, nullptr))
     ThrowError(env, "read file");
 }
 
@@ -126,10 +141,9 @@ Napi::Value _SFileHasFile(const Napi::CallbackInfo &info)
 
   if (!SFileHasFile(hMpq, szFileName.c_str()))
   {
-
     if (GetLastError() == ERROR_FILE_NOT_FOUND)
       return Napi::Boolean::New(env, false);
-    ThrowError(env, "has file");
+    ThrowError(env, "check file");
   }
 
   return Napi::Boolean::New(env, true);
@@ -208,12 +222,13 @@ Napi::Value _SFileCreateFile(const Napi::CallbackInfo &info)
 
   auto hMpq = ReadHandle(info[0]);
   auto szArchivedName = info[1].As<Napi::String>().Utf8Value();
-  auto dwFileSize = info[2].As<Napi::Number>().Int32Value();
-  auto lcLocale = info[3].As<Napi::Number>().Int32Value();
-  auto dwFlags = info[4].As<Napi::Number>().Int32Value();
+  auto FileTime = info[2].As<Napi::Number>().Int32Value();
+  auto dwFileSize = info[3].As<Napi::Number>().Int32Value();
+  auto lcLocale = info[4].As<Napi::Number>().Int32Value();
+  auto dwFlags = info[5].As<Napi::Number>().Int32Value();
 
   HANDLE hFile;
-  if (!SFileCreateFile(hMpq, szArchivedName.c_str(), 0, dwFileSize, lcLocale, dwFlags, &hFile))
+  if (!SFileCreateFile(hMpq, szArchivedName.c_str(), (ULONGLONG)FileTime, dwFileSize, lcLocale, dwFlags, &hFile))
     ThrowError(env, "create file");
 
   return Napi::BigInt::New(env, (uint64_t)hFile);
@@ -240,6 +255,17 @@ void _SFileFinishFile(const Napi::CallbackInfo &info)
     ThrowError(env, "finish file");
 }
 
+void _SFileRemoveFile(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+  auto szFileName = info[1].As<Napi::String>().Utf8Value();
+
+  if (!SFileRemoveFile(hMpq, szFileName.c_str(), 0))
+    ThrowError(env, "remove file");
+}
+
 Napi::Object Init(Napi::Env env, Napi::Object exports)
 {
 #define BIND(function) exports.Set(Napi::String::New(env, #function), Napi::Function::New(env, _##function))
@@ -249,6 +275,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
   BIND(SFileCreateArchive);
   BIND(SFileFlushArchive);
   BIND(SFileCloseArchive);
+  BIND(SFileCompactArchive);
 
   // Using patched archives
   // TODO
@@ -269,6 +296,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
   BIND(SFileCreateFile);
   BIND(SFileWriteFile);
   BIND(SFileFinishFile);
+  BIND(SFileRemoveFile);
 
   // Compression functions
   // TODO

@@ -104,3 +104,84 @@ Note that all archives created by SFileCreateArchive have listfile present due t
    */
   ARCHIVE_V4 = 0x03000000
 }
+
+export enum MPQ_FILE {
+  /**
+   * The file will be compressed using IMPLODE compression method. This flag cannot be used together with MPQ_FILE_COMPRESS. If this flag is present, then the dwCompression and dwCompressionNext parameters are ignored. This flag is obsolete and was used only in Diablo I.
+   */
+  IMPLODE = 0x00000100,
+  /**
+   * The file will be compressed. This flag cannot be used together with MPQ_FILE_IMPLODE.
+   */
+  COMPRESS = 0x00000200,
+  /**
+   * The file will be stored as encrypted.
+   */
+  ENCRYPTED = 0x00010000,
+  /**
+   * The file's encryption key will be adjusted according to file size in the archive. This flag must be used together with MPQ_FILE_ENCRYPTED.
+   */
+  FIX_KEY = 0x00020000,
+  /**
+   * The file will have the deletion marker.
+   */
+  DELETE_MARKER = 0x02000000,
+  /**
+   * The file will have CRC for each file sector. Ignored if the file is not compressed or if the file is stored as single unit.
+   */
+  SECTOR_CRC = 0x04000000,
+  /**
+   * The file will be added as single unit. Files stored as single unit cannot be encrypted, because Blizzard doesn't support them.
+   */
+  SINGLE_UNIT = 0x01000000,
+  /**
+   * If this flag is specified and the file is already in the MPQ, it will be replaced.
+   */
+  REPLACEEXISTING = 0x80000000
+}
+
+export enum MPQ_COMPRESSION {
+  /**
+   * Use Huffman compression. This bit can only be combined with MPQ_COMPRESSION_ADPCM_MONO or MPQ_COMPRESSION_ADPCM_STEREO.
+   */
+  HUFFMANN = 0x01,
+  /**
+   * Use ZLIB compression library. This bit cannot be combined with MPQ_COMPRESSION_BZIP2 or MPQ_COMPRESSION_LZMA.
+   */
+  ZLIB = 0x02,
+  /**
+   * Use Pkware Data Compression Library. This bit cannot be combined with MPQ_COMPRESSION_LZMA.
+   */
+  PKWARE = 0x08,
+  /**
+   * Use BZIP2 compression library. This bit cannot be combined with MPQ_COMPRESSION_ZLIB or MPQ_COMPRESSION_LZMA.
+   */
+  BZIP2 = 0x10,
+  /**
+   * Use SPARSE compression. This bit cannot be combined with MPQ_COMPRESSION_LZMA.
+   */
+  SPARSE = 0x20,
+  /**
+   * Use IMA ADPCM compression for 1-channel (mono) WAVE files. This bit can only be combined with MPQ_COMPRESSION_HUFFMANN. This is lossy compression and should only be used for compressing WAVE files.
+   */
+  ADPCM_MONO = 0x40,
+  /**
+   * Use IMA ADPCM compression for 2-channel (stereo) WAVE files. This bit can only be combined with MPQ_COMPRESSION_HUFFMANN. This is lossy compression and should only be used for compressing WAVE files.
+   */
+  ADPCM_STEREO = 0x80,
+  /**
+   * Use LZMA compression. This value can not be combined with any other compression method.
+   */
+  LZMA = 0x12
+}
+
+export enum SFILE_OPEN {
+  /**
+   * The file is open from the MPQ. This is the default value. hMpq must be valid if SFILE_OPEN_FROM_MPQ is specified.
+   */
+  FROM_MPQ = 0x00000000,
+  /**
+   * Opens a local file instead. The file is open using CreateFileEx with GENERIC_READ access and FILE_SHARE_READ mode.
+   */
+  LOCAL_FILE = 0xffffffff
+}
