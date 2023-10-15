@@ -297,6 +297,32 @@ declare module 'stormlib-node' {
   export function SFileFinishFile(hFile: HANDLE): void;
 
   /**
+   * Function **SFileAddFileEx** adds a file to the MPQ archive. The MPQ must have been open by {@link SFileOpenArchive} or created by {@link SFileCreateArchive}. Note that this operation might cause MPQ fragmentation. To reduce size of the MPQ, use {@link SFileCompactArchive}.
+   *
+   * @param hMpq Handle to an open MPQ. This handle must have been obtained by calling {@link SFileOpenArchive} or {@link SFileCreateArchive}.
+   *
+   * @param szFileName Name of a file to be added to the MPQ.
+   *
+   * @param szArchivedName A name under which the file will be stored into the MPQ. This does not have to be the same like the original file name.
+   *
+   * @param dwFlags Specifies additional options about how to add the file to the MPQ. The value of this parameter can be a combination of this enum's values: {@link MPQ_FILE}
+   *
+   * @param dwCompression Compression method of the first file block. This parameter is ignored if `MPQ_FILE.COMPRESS` is not specified in `dwFlags`. This parameter can be a combination of this enum's values: {@link MPQ_COMPRESSION}
+   *
+   * @param dwCompressionNext Compression method of rest of the file. Specify `MPQ_COMPRESSION.NEXT_SAME` if you want the next data blocks be compressed by the same method like the first one. This parameter can be a combination of this enum's values: {@link MPQ_COMPRESSION}
+   *
+   * {@link Source http://www.zezula.net/en/mpq/stormlib/sfileaddfileex.html}
+   */
+  export function SFileAddFileEx(
+    hMpq: HANDLE,
+    szFileName: string,
+    szArchivedName: string,
+    dwFlags: number,
+    dwCompression?: number,
+    dwCompressionNext?: number
+  ): void;
+
+  /**
    * @description Function SFileRemoveFile removes a file from MPQ. The MPQ must have been open by {@link SFileOpenArchive} or created by {@link SFileCreateArchive}. Note that this operation leaves a gap in the MPQ file. To reduce size of the MPQ, use {@link SFileCompactArchive}.
    * @param hMpq Handle to an open MPQ. This handle must have been obtained by calling {@link SFileOpenArchive} or {@link SFileCreateArchive}.
    * @param szFileName Name of a file to be removed.

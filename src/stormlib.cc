@@ -1,6 +1,6 @@
 #include <napi.h>
 #include <StormLib.h>
-#include "iostream"
+#include <iostream>
 
 auto ReadHandle(const Napi::Value &value)
 {
@@ -75,9 +75,9 @@ void _SFileCompactArchive(const Napi::CallbackInfo &info)
 
   std::string szListFile;
   if (info.Length() > 1 && info[1].IsString())
-    auto szListFile = info[1].As<Napi::String>().Utf8Value();
+    szListFile = info[1].As<Napi::String>().Utf8Value();
 
-  // Close the archive
+  // Compact the archive
   if (!SFileCompactArchive(hMpq, szListFile.empty() ? nullptr : szListFile.c_str(), 0))
     ThrowError(env, "compact archive");
 }
@@ -255,6 +255,21 @@ void _SFileFinishFile(const Napi::CallbackInfo &info)
     ThrowError(env, "finish file");
 }
 
+void _SFileAddFileEx(const Napi::CallbackInfo &info)
+{
+  auto env = info.Env();
+
+  auto hMpq = ReadHandle(info[0]);
+  auto szFileName = info[1].As<Napi::String>().Utf8Value();
+  auto szArchivedName = info[2].As<Napi::String>().Utf8Value();
+  auto dwFlags = info[3].As<Napi::Number>().Int32Value();
+  auto dwCompression = dwFlags == 0x00000200 ? info[4].As<Napi::Number>().Int32Value() : 0;
+  auto dwCompressionNext = dwFlags == 0x00000200 ? info[5].As<Napi::Number>().Int32Value() : 0;
+
+  if (!SFileAddFileEx(hMpq, szFileName.c_str(), szArchivedName.c_str(), dwFlags, dwCompression, dwCompressionNext))
+    ThrowError(env, "add file ex");
+}
+
 void _SFileRemoveFile(const Napi::CallbackInfo &info)
 {
   auto env = info.Env();
@@ -296,6 +311,7 @@ Napi::Object Init(Napi::Env env, Napi::Object exports)
   BIND(SFileCreateFile);
   BIND(SFileWriteFile);
   BIND(SFileFinishFile);
+  BIND(SFileAddFileEx);
   BIND(SFileRemoveFile);
 
   // Compression functions

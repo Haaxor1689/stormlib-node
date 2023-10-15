@@ -172,7 +172,11 @@ export enum MPQ_COMPRESSION {
   /**
    * Use LZMA compression. This value can not be combined with any other compression method.
    */
-  LZMA = 0x12
+  LZMA = 0x12,
+  /**
+   * Same compression as previous block.
+   */
+  NEXT_SAME = 0xffffffff
 }
 
 export enum SFILE_OPEN {
