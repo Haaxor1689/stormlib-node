@@ -1,10 +1,10 @@
 # StormLib Node
 
-Node native module of [StormLib](https://github.com/ladislav-zezula/StormLib) C++ library built for Electron.
+Node native module of [StormLib](https://github.com/ladislav-zezula/StormLib) C++ library.
 
 ## Usage
 
-Install package as a dependency:
+Install the package as a dependency:
 
 ```
 npm i stormlib-node
@@ -24,23 +24,7 @@ import { STREAM_FLAG } from 'stormlib-node/dist/enums';
 SFileOpenArchive('path/to/archive.mpq', STREAM_FLAG.READ_ONLY);
 ```
 
-## Development
+Depending on your use case, you may need to explicitly include these files in your build/package script:
 
-To build this package locally, you need a few prerequisites:
-
-- `node-gyp` installed globally with (`npm i -g node-gyp`)
-- version of Visual Studio with C++ compiler and `msbuild` installed an accessible globally
-
-Then, after downloading this repository run:
-
-```
-npm install
-npm run compile
-npm run configure
-```
-
-Lastly, to build the module use command:
-
-```
-npm run build
-```
+- `./node_modules/stormlib-node/dist/stormlib.node`
+- `./node_modules/stormlib-node/dist/StormLib.dll` (Windows only)
