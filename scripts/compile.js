@@ -5,8 +5,8 @@ const { spawn } = require('child_process');
 const run = (...args) =>
   new Promise((resolve, reject) => {
     const child = spawn(...args);
-    child.stdout.on('data', data => console.log(data.toString()));
-    child.stderr.on('data', data => console.error(data.toString()));
+    child.stdout.on('data', data => process.stdout.write(data));
+    child.stderr.on('data', data => process.stderr.write(data));
     child.on('error', err => reject(err));
     child.on('exit', code =>
       code === 0
@@ -31,17 +31,14 @@ const copyHeaderFiles = (sourceDir, destDir) => {
 };
 
 const buildWindows = async () => {
-  console.log('Compiling stormlib for windows');
+  console.log('Compiling stormlib for windows...');
   await run('msbuild', [
     '.\\stormlib\\StormLib_vs22.sln',
     '/t:StormLib;StormLib_dll',
     '/p:Configuration=ReleaseAS;BuildProjectReferences=false;Platform=x64'
   ]);
-  console.log('Compilation done...');
 
-  fs.removeSync('lib');
-  fs.mkdirSync('lib');
-
+  console.log('Moving build artifacts...');
   fs.copyFileSync(
     'stormlib/bin/StormLib/x64/ReleaseAS/StormLibRAS.lib',
     'lib/StormLibRAS.lib'
@@ -52,7 +49,6 @@ const buildWindows = async () => {
   );
 
   copyHeaderFiles('stormlib/src', 'lib/src');
-  console.log('Cleanup done...');
 };
 
 const buildLinux = async () => {
@@ -61,16 +57,14 @@ const buildLinux = async () => {
     cwd: 'stormlib'
   });
   await run('make', [], { cwd: 'stormlib' });
-  console.log('Compilation done...');
 
-  fs.removeSync('lib');
-  fs.mkdirSync('lib');
-
+  console.log('Moving build artifacts...');
   fs.copyFileSync('stormlib/libstorm.a', 'lib/libstorm.a');
   copyHeaderFiles('stormlib/src', 'lib/src');
-  console.log('Cleanup done...');
 };
 
+if (!fs.existsSync('lib')) fs.mkdirSync('lib');
+
 (process.platform === 'win32' ? buildWindows() : buildLinux())
-  .then(() => console.log('StormLib compilation successful!'))
-  .catch(e => process.exit(-1));
+  .then(() => console.log('Stormlib compile step successful!'))
+  .catch(() => process.exit(-1));
