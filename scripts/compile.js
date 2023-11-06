@@ -47,6 +47,10 @@ const buildWindows = async () => {
     'stormlib/bin/StormLib_dll/x64/Release/StormLib.lib',
     'lib/StormLib.lib'
   );
+  fs.copyFileSync(
+    'stormlib/bin/StormLib_dll/x64/Release/StormLib.dll',
+    'lib/StormLib.dll'
+  );
 
   copyHeaderFiles('stormlib/src', 'lib/src');
 };
